@@ -21,7 +21,9 @@ RUN uv sync --frozen --no-dev
 COPY src/ ./src/
 
 # Non-root user
-RUN addgroup --system afterprint && adduser --system --ingroup afterprint afterprint
+RUN addgroup --system afterprint && adduser --system --ingroup afterprint afterprint \
+    && chown -R afterprint:afterprint /app
+ENV HOME=/app
 USER afterprint
 
 EXPOSE 8000
