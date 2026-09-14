@@ -9,22 +9,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install uv
 RUN pip install --no-cache-dir uv
 
+# Non-root user, with a real writable home for uv's cache/venv
+RUN addgroup --system afterprint && adduser --system --ingroup afterprint --home /home/afterprint afterprint
+
 WORKDIR /app
+RUN chown afterprint:afterprint /app
+USER afterprint
+ENV HOME=/home/afterprint
 
 # Copy dependency files first for layer caching
-COPY pyproject.toml uv.lock ./
+COPY --chown=afterprint:afterprint pyproject.toml uv.lock ./
 
 # Install production dependencies
 RUN uv sync --frozen --no-dev
 
 # Copy source
-COPY src/ ./src/
-
-# Non-root user
-RUN addgroup --system afterprint && adduser --system --ingroup afterprint afterprint \
-    && chown -R afterprint:afterprint /app
-ENV HOME=/app
-USER afterprint
+COPY --chown=afterprint:afterprint src/ ./src/
 
 EXPOSE 8000
 
