@@ -4,9 +4,12 @@ import os
 import tempfile
 from pathlib import Path
 from urllib.parse import urlparse
+
 import httpx
 from pypdf import PdfReader
-from .schemas import Span, ProcessRequest
+
+from .schemas import ProcessRequest, Span
+
 
 async def command(*args: str) -> str:
     process = await asyncio.create_subprocess_exec(*args, stdout=asyncio.subprocess.PIPE,
@@ -33,16 +36,15 @@ async def process_media(request: ProcessRequest) -> list[Span]:
         path = Path(folder)/'original'
         digest = hashlib.sha256()
         size = 0
-        async with httpx.AsyncClient(follow_redirects=False, timeout=60) as client:
-            async with client.stream('GET', request.url) as response:
-                response.raise_for_status()
-                with path.open('wb') as file:
-                    async for chunk in response.aiter_bytes():
-                        size += len(chunk)
-                        if size > maximum:
-                            raise ValueError('Evidence exceeds size limit')
-                        digest.update(chunk)
-                        file.write(chunk)
+        async with httpx.AsyncClient(follow_redirects=False, timeout=60) as client, client.stream('GET', request.url) as response:
+            response.raise_for_status()
+            with path.open('wb') as file:
+                async for chunk in response.aiter_bytes():
+                    size += len(chunk)
+                    if size > maximum:
+                        raise ValueError('Evidence exceeds size limit')
+                    digest.update(chunk)
+                    file.write(chunk)
         if digest.hexdigest() != request.sha256:
             raise ValueError('Evidence hash mismatch')
         mime = request.mimeType

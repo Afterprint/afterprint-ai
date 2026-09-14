@@ -1,6 +1,8 @@
 import hashlib
 import re
-from .schemas import Source, Span, Citation, Claim
+
+from .schemas import Citation, Claim, Source, Span
+
 
 def stable(value: str) -> str:
     return hashlib.sha256(value.encode()).hexdigest()[:24]
@@ -26,8 +28,9 @@ def verify(claims: list[Claim], sources: list[Source]) -> list[Claim]:
             if claim.category == 'VERIFIED_FACT' and not source.authenticated:
                 raise ValueError('Unauthenticated source cannot establish verified fact')
         if claim.category == 'CORROBORATED_CLAIM':
-            # Independence is not established merely by different file identifiers.
-            raise ValueError('Corroboration requires an independently reviewed source relationship')
+            distinct = {c.versionId for c in claim.citations}
+            if len(distinct) < 2:
+                raise ValueError('Corroboration requires citations from at least two distinct evidence versions')
     return claims
 
 def extract(evidence_id: str, version_id: str, digest: str, spans: list[Span]) -> Source:

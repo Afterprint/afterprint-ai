@@ -1,5 +1,7 @@
 from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field
+
 Category = Literal['VERIFIED_FACT', 'CORROBORATED_CLAIM', 'INFERENCE', 'CONFLICT', 'UNKNOWN']
 class Strict(BaseModel):
     model_config = ConfigDict(extra='forbid')

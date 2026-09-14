@@ -1,9 +1,12 @@
 import hmac
 import os
-from fastapi import FastAPI, Depends, Header, HTTPException
-from .schemas import Request, ProcessRequest, Answer, Claim
-from .engine import extract, query_sources, verify, conflict_candidates, stable
+
+from fastapi import Depends, FastAPI, Header, HTTPException
+
+from .engine import conflict_candidates, extract, query_sources, stable, verify
 from .media import process_media
+from .schemas import Answer, Claim, ProcessRequest, Request
+
 
 async def authorize(authorization: str = Header(default='')) -> None:
     token = os.environ.get('AI_SERVICE_TOKEN', '')
