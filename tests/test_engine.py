@@ -1,6 +1,8 @@
 import pytest
-from afterprint_ai.schemas import Span, Claim, Citation
-from afterprint_ai.engine import extract, query_sources, verify, conflict_candidates
+
+from afterprint_ai.engine import conflict_candidates, extract, query_sources, verify
+from afterprint_ai.schemas import Citation, Claim, Span
+
 
 def source(evidence_id='e1', version_id='v1', text='Vehicle X arrived at 20:54.', ref='line 1'):
     return extract(evidence_id, version_id, 'a'*64, [Span(ref=ref, text=text)])

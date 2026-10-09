@@ -1,6 +1,6 @@
 [project]
 name = "afterprint-ai"
-version = "0.1.0"
+version = "0.2.0"
 requires-python = ">=3.14,<3.15"
 dependencies = ["fastapi[standard]==0.141.1", "pydantic>=2.11,<3", "httpx>=0.28,<1", "pypdf>=6,<7", "tenacity>=9,<10", "structlog>=25,<26"]
 [dependency-groups]

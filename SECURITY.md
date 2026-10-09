@@ -6,7 +6,7 @@ This service has **not** undergone an independent security audit. It's deployed 
 
 ## Reporting a vulnerability
 
-Email **chijiokejoseph20242@gmaill.com** with a description of the issue and reproduction steps. Do not open a public GitHub issue for security vulnerabilities.
+Email **devt14985@gmail.com** with a description of the issue and reproduction steps. Do not open a public GitHub issue for security vulnerabilities.
 
 You should get an acknowledgement within 5 business days. Once a fix is available, we'll coordinate disclosure timing with you.
 
