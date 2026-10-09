@@ -24,27 +24,46 @@ async def command(*args: str) -> str:
         raise ValueError('Media tool failed')
     return out.decode('utf-8', errors='replace')
 
-async def process_media(request: ProcessRequest) -> list[Span]:
-    parsed = urlparse(request.url)
-    allowed = set(os.environ.get('EVIDENCE_STORAGE_HOSTS', '').split(','))
-    if parsed.hostname not in allowed or parsed.scheme not in ('https', 'http') or parsed.username:
+def approved_storage_hosts() -> set[str]:
+    """Hosts evidence may be fetched from, from EVIDENCE_STORAGE_HOSTS (comma separated).
+
+    Entries are trimmed and lower-cased, and blanks are ignored, so an unset variable
+    approves nothing instead of matching an empty host.
+    """
+    raw = os.environ.get('EVIDENCE_STORAGE_HOSTS', '')
+    return {host.strip().lower() for host in raw.split(',') if host.strip()}
+
+
+def validate_storage_url(url: str) -> None:
+    """Refuse any URL that is not an approved evidence store. Raises ValueError."""
+    parsed = urlparse(url)
+    if parsed.hostname not in approved_storage_hosts() or parsed.scheme not in ('https', 'http') or parsed.username:
         raise ValueError('Unapproved storage endpoint')
     if parsed.scheme == 'http' and os.environ.get('ALLOW_LOCAL_STORAGE') != 'true':
         raise ValueError('HTTPS required')
+
+
+async def process_media(request: ProcessRequest) -> list[Span]:
+    validate_storage_url(request.url)
     maximum = int(os.environ.get('MAX_UPLOAD_BYTES', '104857600'))
     with tempfile.TemporaryDirectory(prefix='afterprint-') as folder:
         path = Path(folder)/'original'
         digest = hashlib.sha256()
         size = 0
-        async with httpx.AsyncClient(follow_redirects=False, timeout=60) as client, client.stream('GET', request.url) as response:
-            response.raise_for_status()
-            with path.open('wb') as file:
-                async for chunk in response.aiter_bytes():
-                    size += len(chunk)
-                    if size > maximum:
-                        raise ValueError('Evidence exceeds size limit')
-                    digest.update(chunk)
-                    file.write(chunk)
+        try:
+            async with httpx.AsyncClient(follow_redirects=False, timeout=60) as client, client.stream('GET', request.url) as response:
+                if response.status_code != 200:
+                    # Never echo the URL: it is a signed link that grants read access.
+                    raise ValueError(f'Evidence download failed (HTTP {response.status_code})')
+                with path.open('wb') as file:
+                    async for chunk in response.aiter_bytes():
+                        size += len(chunk)
+                        if size > maximum:
+                            raise ValueError('Evidence exceeds size limit')
+                        digest.update(chunk)
+                        file.write(chunk)
+        except httpx.HTTPError as error:
+            raise ValueError(f'Evidence download failed ({type(error).__name__})') from error
         if digest.hexdigest() != request.sha256:
             raise ValueError('Evidence hash mismatch')
         mime = request.mimeType

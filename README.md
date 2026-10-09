@@ -38,10 +38,23 @@ uv run uvicorn afterprint_ai.app:app --reload
 ```
 
 ```bash
-uv run ruff check src/
+uv run ruff check src/ tests/
 uv run mypy src/ --ignore-missing-imports
 uv run pytest tests/ -v
 ```
+
+## Evidence download safety
+
+`process-evidence` fetches evidence from a URL supplied by `afterprint-api`. Before and while downloading it:
+
+- only fetches from hosts listed in `EVIDENCE_STORAGE_HOSTS` (comma separated, trimmed, case-insensitive; an empty list approves nothing),
+- refuses URLs with embedded credentials and any scheme other than `https` (`http` only when `ALLOW_LOCAL_STORAGE=true`, for local development),
+- never follows redirects,
+- stops reading at `MAX_UPLOAD_BYTES` instead of buffering the whole file,
+- rejects the file if its SHA-256 differs from the one the API recorded,
+- returns errors that never contain the download URL, because it is a signed link that grants read access.
+
+Set `ALLOW_LOCAL_STORAGE` only for local development. These rules are covered by `tests/test_media.py`.
 
 ## Contributing
 
@@ -52,7 +65,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the workflow and coding standards, 
 | | |
 |---|---|
 | **GitHub** | [@helloworld1-star](https://github.com/helloworld1-star) |
-| **Email** | chijiokejoseph20242@gmaill.com |
+| **Email** | devt14985@gmail.com |
 
 ---
 
